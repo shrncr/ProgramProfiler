@@ -25,12 +25,11 @@ def FrobNorm(programProfile, newProg):
     #wait i might not need that
     profileNorm = LA.norm(programProfile)
     programNorm = LA.norm(newProg)
-    print(profileNorm)
-    print(programNorm)
-    print(abs(profileNorm-programNorm))
+    print("The profile's norm: {}".format(profileNorm))
+    print("The current program's norm:{}".format(programNorm))
+    print("Comparison value: {}".format(abs(profileNorm-programNorm)))
 
 def interp_matrix(matrix, max_length): #change size of matrix
-    print(matrix.shape[0])
     indices = np.arange(matrix.shape[0])
     spline = [CubicSpline(indices,matrix[:,i]) for i in range(matrix.shape[1])]
     new_indices = np.linspace(0,indices[-1], max_length)
