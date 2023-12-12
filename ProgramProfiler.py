@@ -63,14 +63,15 @@ def createProgramMatrices():
 
 def toProgramProfile(programMatrices):
     max_program_length = max(matrix.shape[0] for matrix in programMatrices) #find longest prog
-    for matrixIndex in range(len(programMatrices)): #pad them
+    for matrixIndex in range(len(programMatrices)): #interpolate them
         programMatrices[matrixIndex] = interp_matrix(programMatrices[matrixIndex],max_program_length)
-
-    overall_matrix_weighted = programMatrices[0]
+    numMatrices = len(programMatrices)
+    overall_matrix_weighted = np.divide(programMatrices[0], numMatrices) 
     for matrixIndex in range(1,len(programMatrices)):
-        overall_matrix_weighted = np.add(overall_matrix_weighted, programMatrices[matrixIndex])
+        overall_matrix_weighted = np.add(overall_matrix_weighted, np.divide(programMatrices[matrixIndex],numMatrices))
 
     return(overall_matrix_weighted)
+    
 def curToMatrix(file,maxLines):
     testMat = np.zeros((len(file),len(keys)))
     StudentSimplified = []
