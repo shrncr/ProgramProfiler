@@ -1,0 +1,131 @@
+import csv
+from Plane import Plane
+from Passenger import Passenger
+
+
+def equivPlanes(pDest):
+    otherPlanes = []
+    for plane in planesObjects:
+        if not plane.planeFull() and plane.destination == pDest:
+            otherPlanes.append(plane)
+    return otherPlanes
+
+def binarySearch(pObjs, ID): ##binary search 
+    first = 0
+    last = len(pObjs) - 1
+
+    while first <= last:
+        mid = (first+last)//2
+        if pObjs[mid].planeNum == ID:
+            return pObjs[mid]
+        else:
+            if first > last:
+                return("This plane is not in our directory")
+            else:
+                if pObjs[mid].planeNum < ID:
+                    first = mid + 1
+                else:
+                    last = mid - 1
+    return ("This plane is not in our directory")
+
+promptsList = ["Enter your name: ", "Enter what food you'd like. Options are chicken, pasta, or special: "]
+
+planesFile = open(r"planes.txt")
+planesArrHeader = (planesFile.read()).split("\n") #reads file and adds each line as an element to an arr
+planesArr = planesArrHeader[1:] #beheading the header execution style
+planesObjects = []
+
+bookings2d = (list(csv.reader(open('bookings.csv'))))[1:] #discovered csv reader thanks blurb after searching "csv to 2d array python" on goog
+
+for planeInstance in planesArr: #creates plane objects like last time. NEW: records type of meal offered, max seats, and the empty plane map
+    planeDeets = planeInstance.split(",")
+    seatsOnPlane = (int(planeDeets[4]) * int(planeDeets[5])) #rows * num per rows gives total seats on plane
+    emptyPlane = [[0 for _  in range(int(planeDeets[5]))] for _ in range(int(planeDeets[4]))]
+    planesObjects.append(Plane(planeDeets[0], planeDeets[1], planeDeets[2], planeDeets[3], mxs= seatsOnPlane, bk = emptyPlane)) #converting the elements from a string to an object with usable values
+
+for row in range(1, len(planesObjects)): #insertion sort. 
+    curRow = row
+    while curRow > 0:
+        if planesObjects[curRow].planeNum < planesObjects[curRow-1].planeNum:
+            temp = planesObjects[curRow]
+            planesObjects[curRow] = planesObjects[curRow-1]
+            planesObjects[curRow-1] = temp
+        curRow -= 1
+
+firstPlaneNum = planesObjects[0].planeNum
+equivs = 0
+
+for booking in range(len(bookings2d)): #booking iterates through however many bookings there are 
+    for planeObjIndex in range(len(planesObjects)): #iterates through however many plane objects there are
+        if int(bookings2d[booking][0]) == planesObjects[planeObjIndex].planeNum: #if the plane number of current booking is equiv to the plane num in the arr
+            equivs += 1
+            planesObjects[planeObjIndex].numOnPlane += 1 #add to passengers on plane
+            if planesObjects[planeObjIndex].hasMeal:
+                foodForPas = bookings2d[booking][2]
+            else: 
+                foodForPas = "snack"
+
+            currentBookingChart = planesObjects[planeObjIndex].bookings #bring up the current 2d array for the plane rn
+            row = int(bookings2d[booking][3]) #note the row we need
+            row -= 1
+            col =int(bookings2d[booking][4]) #note the seat num
+            col -= 1
+            currentBookingChart[row][col] = Passenger(bookings2d[booking][1], foodForPas)
+
+print("\nThank you for choosing Cartesian Planes LLC! To continue, please type the number respective to your menu option")
+choice = 0
+while choice != "6":
+    
+    
+    choice = input("\n 1. Add passenger? \n 2. List planes? \n 3. List Passengers? \n 4. Food Count? \n 5. Find Passenger? \n 6. End Program \n")
+
+    if choice == "1":
+        planeInfo = int(input("Please enter the ID number of the plane you'd like to book "))
+        row = int(input("Enter the row youd like to sit in ")) - 1
+        seat = int(input("Which seat would you like to sit in ")) - 1
+        plane = binarySearch(planesObjects, planeInfo)
+        if plane.planeFull():
+            otherPlanes = equivPlanes(plane.destination)
+            print("There are no available seats on the plane you requested... ")
+            if len(otherPlanes) > 0:
+                print("we found other flights with openings to your same destination. They are listed below")
+                for i in otherPlanes:
+                    print(i.planeNum)
+                    print(i.openSeats())
+            else:
+                print("There are no other planes headed to the same destination. Tought luck.. Dont you know that you shouldnt book plane tickets last second?")
+        elif plane.bookings[row][seat] == 0:
+            deets = []
+            for prompt in promptsList:
+                ans = input(prompt)
+                deets.append(ans)
+
+            plane.bookings[row][seat] = Passenger(deets[0], deets[1])
+            print(plane.bookings[row][seat])
+        else:
+                #seat booked, plane has room
+                openSeats = plane.openSeats()
+                print("The seat you wanted to book is taken. Here are some other open seats. ")
+                for seat in openSeats:
+                    print(seat)
+    elif choice == "2":
+        for plane in planesObjects:
+            print(plane)
+    elif choice == "3":
+        planeNum = int(input("Please enter the plane number for which youd like to see the passengers "))
+        for plane in planesObjects:
+            if plane.planeNum ==planeNum:
+                dic = plane.alphaList()
+                for key in dic:
+                    print("Name:{}, Seat:{}".format(key, dic[key]))
+    elif choice == "4":
+        planeNum = int(input("Please enter the plane number for which youd like to see the passengers food preferences "))
+        for plane in planesObjects:
+            if plane.planeNum == planeNum:
+                print(plane.foodPrefCount())
+    elif choice == "5":
+        planeNum = int(input("Please enter the plane number for which youd like to find a passenger "))
+        for plane in planesObjects:
+            if plane.planeNum == planeNum:
+                name = input("Who are you looking for? ")
+                print(plane.findPassenger(name))
